@@ -14,8 +14,8 @@ searcher.set_language('zh')
 device = 'cuda:7'
 logger.info('Loading the model and tokenizer...')
 model_name = 'baichuan-inc/Baichuan2-7B-Chat'
-tokenizer = AutoTokenizer.from_pretrained(model_name, token="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", trust_remote_code=True, use_cache=True)
-model = AutoModelForCausalLM.from_pretrained(model_name, token="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", trust_remote_code=True, use_cache=True)
+tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True, use_cache=True)
+model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True, use_cache=True)
 model.to(device)
 
 # 定义检索函数
