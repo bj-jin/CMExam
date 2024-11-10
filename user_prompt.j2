@@ -1,0 +1,17 @@
+{% if use_kb %}以下是一些可能相关的参考文章：
+
+{% for article in kb_articles %} - 【{{ article.title }}】{{ article.contents }}
+{% endfor %}
+{% endif %}{% if use_ref %}以下是一些可供你参考的例题：
+
+{% for ref in ref_questions %}{{ ref }}
+
+{% endfor %}{% endif %}请回答如下问题：{{ question }}
+
+选项A：{{ options[0] }}
+选项B：{{ options[1] }}
+选项C：{{ options[2] }}
+选项D：{{ options[3] }}
+选项E：{{ options[4] }}
+
+输出你的思考过程，然后以一个 JSON 对象的形式给出你的答案和解释。

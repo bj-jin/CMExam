@@ -18,8 +18,8 @@ import re
 
 # 定义推理函数
 def augment_and_predict(item, st, ut, model, tokenizer):
-    question = item["question"]
-    options = [x[2:] for x in item["options"].split("\n")] # 去掉选项前的标号
+    question = item["Question"]
+    options = [x[2:] for x in item["Options"].split("\n")] # 去掉选项前的标号
     kb = item["kb"]
     ref = item["ref"] # 实际上是一个 str 组成的 list，每个 str 是一个 JSON
 
@@ -87,10 +87,11 @@ def read_data(file_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='auto')
-    parser.add_argument('--test-file', type=str, default='data/test_kb4_ref8.json')
+    parser.add_argument('--test-file', type=str, default='data/val_kb4_ref8.json')
     parser.add_argument('--model', type=str, default='baichuan-inc/Baichuan2-7B-Chat')
     parser.add_argument('--system', type=str, default='system_prompt.j2')
     parser.add_argument('--user', type=str, default='user_prompt.j2')
+    parser.add_argument('--output', type=str, default='val_result.json')
     args = parser.parse_args()
 
     with open(args.system, 'r') as f:
@@ -106,7 +107,20 @@ if __name__ == '__main__':
     data = read_data(args.test_file)
 
     # 遍历数据集
+    output = []
     for item in tqdm(data):
-        question = item["question"]
+        question = item["Question"]
+        correct_answer = item["Answer"]
         prediction = augment_and_predict(item, system_template, user_template, model, tokenizer)
-        print(f"Question: {question}\nPrediction: {prediction}\n")
+        predict_answer = prediction["answer"]
+        print(f"Question: {question}\nPrediction: {predict_answer}\nCorrect Answer: {correct_answer}\n")
+        output.append({
+            "Question": question,
+            "Prediction": predict_answer,
+            "Correct": correct_answer
+        })
+
+        with open(args.output, 'w') as f:
+            json.dump(output, f, indent=4, ensure_ascii=False)
+
+

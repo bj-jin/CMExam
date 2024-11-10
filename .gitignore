@@ -1,1 +1,8 @@
 index/*
+index_ref/*
+data/*.csv
+data/*.json
+trainset/*.csv
+trainset/*.json
+trainset/ref/*.json
+*.json
