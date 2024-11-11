@@ -1,6 +1,6 @@
-{% if use_kb %}以下是一些可能相关的参考文章：
+{% if use_kb %}以下是一些有可能相关的参考文章：
 
-{% for article in kb_articles %} - 【{{ article.title }}】{{ article.contents }}
+{% for article in kb_articles %} - {{ article }}
 {% endfor %}
 {% endif %}{% if use_ref %}以下是一些可供你参考的例题：
 

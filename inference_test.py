@@ -62,13 +62,15 @@ def augment_and_predict(item, st, ut, model, tokenizer):
     # 寻找 answer 中的 JSON
     json_pattern = r'\{.*?\}'
     match = re.search(json_pattern, answer, re.DOTALL)
-    if match:
+    try:
+        if not match:
+            raise Exception("No JSON found in the answer.")
         answer = match.group()
         return json.loads(answer)
-    else:
+    except Exception as e:
         return {
             "answer": "C", # 默认选 C 吧……
-            "explaination": "No JSON found in the answer."
+            "explanation": "No JSON found in the answer."
         }
 
     # with torch.no_grad():
