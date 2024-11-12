@@ -18,12 +18,18 @@ new_data = []
 for index, item in enumerate(base):
     new_item = item.copy()
     corresponding_wiki = wiki[index]
-    question_kb = [json.loads(x) for x in corresponding_wiki["question_kb"]]
-    options_kb = [json.loads(x) for x in corresponding_wiki["options_kb"]]
+    kbs = []
+
+    for x in corresponding_wiki["question_kb"] + corresponding_wiki["options_kb"]:
+        score = x[0]
+        obj = json.loads(x[1])
+        obj["score"] = score
+        kbs.append(obj)
+
     kb_id_set = set()
     kb = []
-    for knowledge in question_kb + options_kb:
-        if knowledge["id"] not in kb_id_set:
+    for knowledge in kbs:
+        if knowledge["id"] not in kb_id_set and (knowledge["score"] >= 35 and knowledge["score"] <= 80):
             kb_id_set.add(knowledge["id"])
             knowledge_content = knowledge["contents"]
 

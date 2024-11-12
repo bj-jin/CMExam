@@ -66,11 +66,19 @@ def augment_and_predict(item, st, ut, model, tokenizer):
         if not match:
             raise Exception("No JSON found in the answer.")
         answer = match.group()
-        return json.loads(answer)
+        answer = json.loads(answer)
+
+        choice = answer["answer"]
+        # 检查 choice 的每个字符是否是 A, B, C, D, E 之一
+        for c in choice:
+            if c not in "ABCDE":
+                raise Exception("Invalid choice.")
+    
+        return answer
     except Exception as e:
         return {
             "answer": "C", # 默认选 C 吧……
-            "explanation": "No JSON found in the answer."
+            "explanation": "Error occurred, fallback to C."
         }
 
     # with torch.no_grad():

@@ -28,7 +28,7 @@ def augment_and_predict(item, st, ut, model, tokenizer):
         ref_questions.append(json.loads(r)["contents"])
 
     system_prompt = st.render()
-    user_prompt = ut.render(use_kb=False, use_ref=True, ref_questions=ref_questions, question=question, options=options)
+    user_prompt = ut.render(use_kb=True, use_ref=True, kb_articles=kb, ref_questions=ref_questions, question=question, options=options)
 
 
     # 进行推理，以下只使用于 GLM-4，可能得根据模型不同进行调整
@@ -66,11 +66,19 @@ def augment_and_predict(item, st, ut, model, tokenizer):
         if not match:
             raise Exception("No JSON found in the answer.")
         answer = match.group()
-        return json.loads(answer)
+        answer = json.loads(answer)
+
+        choice = answer["answer"]
+        # 检查 choice 的每个字符是否是 A, B, C, D, E 之一
+        for c in choice:
+            if c not in "ABCDE":
+                raise Exception("Invalid choice.")
+    
+        return answer
     except Exception as e:
         return {
             "answer": "C", # 默认选 C 吧……
-            "explanation": "No JSON found in the answer."
+            "explanation": "Error occurred, fallback to C."
         }
 
     # with torch.no_grad():
@@ -89,10 +97,11 @@ def read_data(file_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='auto')
-    parser.add_argument('--test-file', type=str, default='data/test_kb4_ref8.json')
+    parser.add_argument('--test-file', type=str, default='data/val_kb4_ref8.json')
     parser.add_argument('--model', type=str, default='baichuan-inc/Baichuan2-7B-Chat')
     parser.add_argument('--system', type=str, default='system_prompt.j2')
     parser.add_argument('--user', type=str, default='user_prompt.j2')
+    parser.add_argument('--output', type=str, default='val_result.json')
     args = parser.parse_args()
 
     with open(args.system, 'r') as f:
@@ -108,7 +117,52 @@ if __name__ == '__main__':
     data = read_data(args.test_file)
 
     # 遍历数据集
-    for item in tqdm(data):
-        question = item["question"]
-        prediction = augment_and_predict(item, system_template, user_template, model, tokenizer)
-        print(f"Question: {question}\nPrediction: {prediction}\n")
+    has_answer = 0
+    correct = 0
+
+    try:
+        with open(args.output, 'r') as f:
+            output = json.load(f)
+    except FileNotFoundError:
+        output = []
+    with tqdm(data) as bar:
+        finished = len(output)
+
+        for index, item in enumerate(data[:finished]):
+            if "answer" in item.keys():
+                correct_answer = item["answer"]
+                predicted_answer = output[index]["answer"]
+                has_answer += 1
+                if correct_answer == predicted_answer:
+                    correct += 1
+
+            bar.update(1)
+            bar.set_postfix_str(f"Correct: {correct} / Has Ans: {has_answer}")
+
+
+        for item in data[finished:]:
+            question = item["question"]
+            prediction = augment_and_predict(item, system_template, user_template, model, tokenizer)
+            predicted_answer = prediction["answer"]
+
+            output.append({
+                "question": question,
+                "options": item["options"],
+                "answer": predicted_answer
+            })
+
+            if "answer" in item.keys():
+                correct_answer = item["answer"]
+                has_answer += 1
+                if correct_answer == predicted_answer:
+                    correct += 1
+
+            bar.set_postfix_str(f"Correct: {correct} / Has Ans: {has_answer}")
+            bar.update(1)
+
+            with open(args.output, "w") as f:
+                json.dump(output, f, indent=4, ensure_ascii=False)
+
+
+
+
