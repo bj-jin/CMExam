@@ -28,7 +28,7 @@ def augment_and_predict(item, st, ut, model, tokenizer):
         ref_questions.append(json.loads(r)["contents"])
 
     system_prompt = st.render()
-    user_prompt = ut.render(use_kb=True, use_ref=True, kb_articles=kb, ref_questions=ref_questions, question=question, options=options)
+    user_prompt = ut.render(use_kb=(len(kb) != 0), use_ref=True, kb_articles=kb, ref_questions=ref_questions, question=question, options=options)
 
 
     # 进行推理，以下只使用于 GLM-4，可能得根据模型不同进行调整

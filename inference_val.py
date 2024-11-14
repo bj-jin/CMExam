@@ -28,8 +28,9 @@ def augment_and_predict(item, st, ut, model, tokenizer):
         ref_questions.append(json.loads(r)["contents"])
 
     system_prompt = st.render()
-    user_prompt = ut.render(use_kb=True, use_ref=True, kb_articles=kb, ref_questions=ref_questions, question=question, options=options)
+    user_prompt = ut.render(use_kb=(len(kb) > 0), use_ref=(len(ref) > 0), kb_articles=kb, ref_questions=ref_questions, question=question, options=options)
 
+    # print(user_prompt)
 
     # 进行推理，以下只使用于 GLM-4，可能得根据模型不同进行调整
     messages = [
@@ -117,20 +118,42 @@ if __name__ == '__main__':
     data = read_data(args.test_file)
 
     # 遍历数据集
-    output = []
-    for item in tqdm(data):
-        question = item["Question"]
-        correct_answer = item["Answer"]
-        prediction = augment_and_predict(item, system_template, user_template, model, tokenizer)
-        predict_answer = prediction["answer"]
-        print(f"Question: {question}\nPrediction: {predict_answer}\nCorrect Answer: {correct_answer}\n")
-        output.append({
-            "Question": question,
-            "Prediction": predict_answer,
-            "Correct": correct_answer
-        })
+    total = 0
+    correct = 0
 
-        with open(args.output, 'w') as f:
-            json.dump(output, f, indent=4, ensure_ascii=False)
+    try:
+        with open(args.output, 'r') as f:
+            output = json.load(f)
+    except FileNotFoundError:
+        output = []
+
+    with tqdm(data) as bar:
+        finished = len(output)
+        for item in output:
+            total += 1
+            if item["Prediction"] == item["Correct"]:
+                correct += 1
+            bar.update(1)
+
+        for item in data[finished:]:
+            question = item["Question"]
+            correct_answer = item["Answer"]
+            prediction = augment_and_predict(item, system_template, user_template, model, tokenizer)
+            predict_answer = prediction["answer"]
+            output.append({
+                "Question": question,
+                "Prediction": predict_answer,
+                "Correct": correct_answer
+            })
+
+            if predict_answer == correct_answer:
+                correct += 1
+            total += 1
+
+            bar.set_postfix_str(f"Correct: {correct} / Total: {total}")
+            bar.update(1)
+
+            with open(args.output, 'w') as f:
+                json.dump(output, f, indent=4, ensure_ascii=False)
 
 
